@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <!-- 画像を表示するImageView -->
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_marginTop="50dp"
+        android:background="@android:color/darker_gray"
+        android:scaleType="centerCrop" />
+
+    <LinearLayout
+        android:id="@+id/ll_buttons"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/imageView"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+    <!-- 画像をアップロードするボタン -->
+    <Button
+        android:id="@+id/uploadButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="@string/btn_upload" />
+
+    <Button
+        android:id="@+id/cameraButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="@string/btn_camera" />
+    </LinearLayout>
+
+    <!-- 解析結果を表示するテキストビュー -->
+    <TextView
+        android:id="@+id/resultTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:background="@android:color/white"
+        android:layout_below="@+id/ll_buttons"
+        android:elevation="2dp"
+        android:gravity="center"
+        android:padding="16dp"
+        android:text="@string/tv_result"
+        android:textColor="#000000"
+        android:textSize="16sp" />
+
+
+</RelativeLayout>
