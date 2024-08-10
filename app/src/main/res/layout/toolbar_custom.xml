@@ -1,0 +1,36 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
+
+    <!-- サイドバーボタン -->
+    <ImageButton
+        android:id="@+id/openSidebarButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/baseline_menu_24"
+        android:contentDescription="Open Sidebar"
+        android:padding="8dp" />
+
+    <!-- タイトル -->
+    <TextView
+        android:id="@+id/toolbarTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="Your App Title" />
+
+    <!-- 新しいページボタン -->
+    <ImageButton
+        android:id="@+id/newPageButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/baseline_insert_drive_file_24"
+        android:contentDescription="New Page"
+        android:padding="8dp" />
+
+</LinearLayout>

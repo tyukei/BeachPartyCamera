@@ -1,21 +1,25 @@
 package com.tyukei.beachpartycamera
 
-import androidx.appcompat.app.AppCompatActivity
-import android.os.Bundle
-import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
+import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Base64
-import android.util.Log
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.core.app.ActivityCompat
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatRole
@@ -29,34 +33,67 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
-import java.io.InputStream
+
+data class ImageResult(val image: Bitmap, val text: String)
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var apiKey: String
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var imageView: ImageView
+    private lateinit var resultTextView: TextView
+    private val results = mutableListOf<ImageResult>()
+    private lateinit var sidebarAdapter: SidebarAdapter
+
     private val REQUEST_CODE_PICK_IMAGE = 1001
     private val REQUEST_CODE_CAPTURE_IMAGE = 1002
-    private lateinit var apiKey: String
-    private lateinit var imageView: ImageView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // APIキーを取得
+        drawerLayout = findViewById(R.id.drawerLayout)
+        imageView = findViewById(R.id.imageView)
+        resultTextView = findViewById(R.id.resultTextView)
         apiKey = BuildConfig.OPENAI_API_KEY
 
-        imageView = findViewById(R.id.imageView)
+        // サイドバーのセットアップ
+        sidebarAdapter = SidebarAdapter(results) { position ->
+            restoreImageResult(position)
+        }
+        val sidebarRecyclerView: RecyclerView = findViewById(R.id.sidebarRecyclerView)
+        sidebarRecyclerView.layoutManager = LinearLayoutManager(this)
+        sidebarRecyclerView.adapter = sidebarAdapter
 
+        // Toolbar の設定
+        val toolbar: Toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
+
+        // カスタムレイアウト内のボタンを取得
+        val openSidebarButton: ImageButton = findViewById(R.id.openSidebarButton)
+        val newPageButton: ImageButton = findViewById(R.id.newPageButton)
         val uploadButton: Button = findViewById(R.id.uploadButton)
         val cameraButton: Button = findViewById(R.id.cameraButton)
 
+        // サイドバーボタン
+        openSidebarButton.setOnClickListener {
+            drawerLayout.openDrawer(GravityCompat.START)
+        }
+
+        // 新しいページ作成ボタン
+        newPageButton.setOnClickListener {
+            clearCurrentImageAndText()
+        }
+
+        // 画像アップロードボタン
         uploadButton.setOnClickListener {
             pickImage()
         }
 
+        // カメラ起動ボタン
         cameraButton.setOnClickListener {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), REQUEST_CODE_CAPTURE_IMAGE)
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(android.Manifest.permission.CAMERA), REQUEST_CODE_CAPTURE_IMAGE)
             } else {
                 openCamera()
             }
@@ -76,23 +113,32 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_CODE_PICK_IMAGE && resultCode == RESULT_OK) {
-            val uri: Uri? = data?.data
-            uri?.let {
-                val inputStream = contentResolver.openInputStream(it)
-                val byteArray = inputStream?.readBytes()
-                byteArray?.let {
-                    val bitmap = BitmapFactory.decodeByteArray(it, 0, it.size)
-                    imageView.setImageBitmap(bitmap)
-                    val base64 = Base64.encodeToString(it, Base64.DEFAULT)
+        if (resultCode == RESULT_OK) {
+            when (requestCode) {
+                REQUEST_CODE_PICK_IMAGE -> {
+                    val uri: Uri? = data?.data
+                    uri?.let {
+                        handleImageUpload(it)
+                    }
+                }
+                REQUEST_CODE_CAPTURE_IMAGE -> {
+                    val photo: Bitmap = data?.extras?.get("data") as Bitmap
+                    imageView.setImageBitmap(photo)
+                    val byteArray = bitmapToByteArray(photo)
+                    val base64 = Base64.encodeToString(byteArray, Base64.DEFAULT)
                     sendImageToOpenAI(base64)
                 }
             }
-        } else if (requestCode == REQUEST_CODE_CAPTURE_IMAGE && resultCode == RESULT_OK) {
-            val photo: Bitmap = data?.extras?.get("data") as Bitmap
-            imageView.setImageBitmap(photo)
-            val byteArray = bitmapToByteArray(photo)
-            val base64 = Base64.encodeToString(byteArray, Base64.DEFAULT)
+        }
+    }
+
+    private fun handleImageUpload(uri: Uri) {
+        val inputStream = contentResolver.openInputStream(uri)
+        val byteArray = inputStream?.readBytes()
+        byteArray?.let {
+            val bitmap = BitmapFactory.decodeByteArray(it, 0, it.size)
+            imageView.setImageBitmap(bitmap)
+            val base64 = Base64.encodeToString(it, Base64.DEFAULT)
             sendImageToOpenAI(base64)
         }
     }
@@ -101,6 +147,18 @@ class MainActivity : AppCompatActivity() {
         val stream = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
         return stream.toByteArray()
+    }
+
+    private fun saveResult(bitmap: Bitmap, result: String) {
+        results.add(ImageResult(bitmap, result))
+        sidebarAdapter.notifyDataSetChanged()
+    }
+
+    private fun restoreImageResult(position: Int) {
+        val imageResult = results[position]
+        imageView.setImageBitmap(imageResult.image)
+        resultTextView.text = imageResult.text
+        drawerLayout.closeDrawer(GravityCompat.START)
     }
 
     private fun sendImageToOpenAI(base64: String) {
@@ -127,16 +185,27 @@ class MainActivity : AppCompatActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                resultTextView.text = "評価中。。。。"
                 val result = openAI.chatCompletion(request)
                 val content = result.choices.firstOrNull()?.message?.content
                 withContext(Dispatchers.Main) {
-                    findViewById<TextView>(R.id.resultTextView).text = content ?: "結果がありません"
+                    val bitmap = (imageView.drawable as BitmapDrawable).bitmap
+                    if (content != null) {
+                        saveResult(bitmap, content)
+                    }
+                    // 結果を表示
+                    resultTextView.text = content ?: "結果がありません"
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    findViewById<TextView>(R.id.resultTextView).text = "エラーが発生しました: ${e.message}"
+                    resultTextView.text = "エラーが発生しました: ${e.message}"
                 }
             }
         }
+    }
+
+    private fun clearCurrentImageAndText() {
+        imageView.setImageDrawable(null)
+        resultTextView.text = ""
     }
 }
