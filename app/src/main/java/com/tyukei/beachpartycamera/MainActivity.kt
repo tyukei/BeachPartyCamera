@@ -9,9 +9,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Base64
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -49,6 +47,9 @@ class MainActivity : AppCompatActivity() {
     private val results = mutableListOf<ImageResult>()
     private lateinit var sidebarAdapter: SidebarAdapter
 
+    private lateinit var db: AppDatabase
+    private lateinit var imageResultDao: ImageResultDao
+
     private val REQUEST_CODE_PICK_IMAGE = 1001
     private val REQUEST_CODE_CAPTURE_IMAGE = 1002
 
@@ -62,31 +63,30 @@ class MainActivity : AppCompatActivity() {
         deleteButton = findViewById(R.id.deleteButton)
         apiKey = BuildConfig.OPENAI_API_KEY
 
-        // サイドバーのセットアップ
+        db = AppDatabase.getDatabase(this)
+        imageResultDao = db.imageResultDao()
+
+        loadSavedResults()
+
         sidebarAdapter = SidebarAdapter(results, ::restoreImageResult, ::deleteResult)
         val sidebarRecyclerView: RecyclerView = findViewById(R.id.sidebarRecyclerView)
         sidebarRecyclerView.layoutManager = LinearLayoutManager(this)
         sidebarRecyclerView.adapter = sidebarAdapter
 
-        // Toolbar の設定
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
-        // カスタムレイアウト内のボタンを取得
         val openSidebarButton: ImageButton = findViewById(R.id.openSidebarButton)
         val newPageButton: ImageButton = findViewById(R.id.newPageButton)
         val uploadButton: Button = findViewById(R.id.uploadButton)
         val cameraButton: Button = findViewById(R.id.cameraButton)
 
-        // 初期状態では削除ボタンを非表示に
         deleteButton.visibility = View.GONE
 
-        // サイドバーボタン
         openSidebarButton.setOnClickListener {
             drawerLayout.openDrawer(GravityCompat.START)
         }
 
-        // 新しいページ作成ボタン
         newPageButton.setOnClickListener {
             clearCurrentImageAndText()
             deleteButton.visibility = View.GONE
@@ -94,28 +94,18 @@ class MainActivity : AppCompatActivity() {
             cameraButton.visibility = View.VISIBLE
         }
 
-        // 画像アップロードボタン
         uploadButton.setOnClickListener {
             pickImage()
         }
 
-        // カメラ起動ボタン
         cameraButton.setOnClickListener {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.CAMERA
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                requestPermissions(
-                    arrayOf(android.Manifest.permission.CAMERA),
-                    REQUEST_CODE_CAPTURE_IMAGE
-                )
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(android.Manifest.permission.CAMERA), REQUEST_CODE_CAPTURE_IMAGE)
             } else {
                 openCamera()
             }
         }
 
-        // 削除ボタン
         deleteButton.setOnClickListener {
             val currentPosition = results.indexOfFirst { it.text == resultTextView.text.toString() }
             if (currentPosition != -1) {
@@ -124,6 +114,19 @@ class MainActivity : AppCompatActivity() {
                 deleteButton.visibility = View.GONE
                 uploadButton.visibility = View.VISIBLE
                 cameraButton.visibility = View.VISIBLE
+            }
+        }
+    }
+
+    private fun loadSavedResults() {
+        CoroutineScope(Dispatchers.IO).launch {
+            val savedResults = imageResultDao.getAll()
+            withContext(Dispatchers.Main) {
+                for (result in savedResults) {
+                    val bitmap = BitmapFactory.decodeByteArray(result.image, 0, result.image.size)
+                    results.add(ImageResult(bitmap, result.text))
+                }
+                sidebarAdapter.notifyDataSetChanged()
             }
         }
     }
@@ -149,7 +152,6 @@ class MainActivity : AppCompatActivity() {
                         handleImageUpload(it)
                     }
                 }
-
                 REQUEST_CODE_CAPTURE_IMAGE -> {
                     val photo: Bitmap = data?.extras?.get("data") as Bitmap
                     imageView.setImageBitmap(photo)
@@ -179,25 +181,46 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun saveResult(bitmap: Bitmap, result: String) {
-        results.add(ImageResult(bitmap, result))
-        sidebarAdapter.notifyDataSetChanged()
+        val byteArray = bitmapToByteArray(bitmap)
+        val imageResultEntity = ImageResultEntity(image = byteArray, text = result)
+
+        CoroutineScope(Dispatchers.IO).launch {
+            imageResultDao.insert(imageResultEntity)
+            withContext(Dispatchers.Main) {
+                results.add(ImageResult(bitmap, result))
+                sidebarAdapter.notifyDataSetChanged()
+            }
+        }
     }
 
+    private fun deleteResult(position: Int) {
+        val imageResult = results[position]
+        val byteArray = bitmapToByteArray(imageResult.image)
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val entityToDelete = imageResultDao.getAll().firstOrNull {
+                it.text == imageResult.text && it.image.contentEquals(byteArray)
+            }
+            if (entityToDelete != null) {
+                imageResultDao.delete(entityToDelete)
+            }
+            withContext(Dispatchers.Main) {
+                results.removeAt(position)
+                sidebarAdapter.notifyDataSetChanged()
+            }
+        }
+    }
+
+    // restoreImageResult 関数をここに追加
     private fun restoreImageResult(position: Int) {
         val imageResult = results[position]
         imageView.setImageBitmap(imageResult.image)
         resultTextView.text = imageResult.text
         drawerLayout.closeDrawer(GravityCompat.START)
 
-        // camera, upload ボタンを非表示にし、削除ボタンを表示
         findViewById<Button>(R.id.uploadButton).visibility = View.GONE
         findViewById<Button>(R.id.cameraButton).visibility = View.GONE
         deleteButton.visibility = View.VISIBLE
-    }
-
-    private fun deleteResult(position: Int) {
-        results.removeAt(position)
-        sidebarAdapter.notifyDataSetChanged()
     }
 
     private fun sendImageToOpenAI(base64: String) {
@@ -232,10 +255,8 @@ class MainActivity : AppCompatActivity() {
                     if (content != null) {
                         saveResult(bitmap, content)
                     }
-                    // 結果を表示
                     resultTextView.text = content ?: "結果がありません"
 
-                    // camera, upload ボタンを非表示にし、削除ボタンを表示
                     findViewById<Button>(R.id.uploadButton).visibility = View.GONE
                     findViewById<Button>(R.id.cameraButton).visibility = View.GONE
                     deleteButton.visibility = View.VISIBLE
