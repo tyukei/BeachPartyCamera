@@ -1,8 +1,41 @@
-<resources>
-    <!-- Base application theme. -->
-    <style name="Base.Theme.BeachPartyCamera" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your theme here. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme -->
+    <style name="Theme.BeachPartyCamera" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary color palette (for example, a sea blue) -->
+        <item name="colorPrimary">@color/beach_blue_primary</item>
+        <item name="colorPrimaryVariant">@color/beach_blue_dark</item>
+        <item name="colorOnPrimary">@color/beach_text_on_primary</item>
+
+        <!-- Secondary color palette (for example, sand color) -->
+        <item name="colorSecondary">@color/beach_sand</item>
+        <item name="colorSecondaryVariant">@color/beach_sand_dark</item>
+        <item name="colorOnSecondary">@color/beach_text_on_secondary</item>
+
+        <!-- Background color (use a light color to evoke the feeling of sand) -->
+        <item name="android:colorBackground">@color/beach_background</item>
+        <item name="colorSurface">@color/beach_surface</item>
+        <item name="colorOnSurface">@color/beach_text_on_surface</item>
+
+        <!-- Text colors -->
+        <item name="android:textColor">@color/beach_text_on_surface</item>
+        <item name="android:textColorPrimary">@color/beach_text_on_primary</item>
+        <item name="android:textColorSecondary">@color/beach_text_on_secondary</item>
+
+        <!-- Button styles -->
+        <item name="buttonStyle">@style/Widget.MaterialComponents.Button</item>
+        <item name="materialButtonStyle">@style/Widget.MaterialComponents.Button.OutlinedButton</item>
+
+        <!-- Status bar and navigation bar colors -->
+        <item name="android:statusBarColor">@color/beach_blue_dark</item>
+        <item name="android:navigationBarColor">@color/beach_blue_primary</item>
+
+        <!-- Toolbar theme -->
+        <item name="toolbarStyle">@style/Widget.BeachPartyCamera.Toolbar</item>
     </style>
 
-    <style name="Theme.BeachPartyCamera" parent="Base.Theme.BeachPartyCamera" />
+    <!-- Toolbar style -->
+    <style name="Widget.BeachPartyCamera.Toolbar" parent="Widget.MaterialComponents.Toolbar.Primary">
+        <item name="android:background">@color/beach_blue_primary</item>
+        <item name="android:titleTextColor">@color/beach_text_on_primary</item>
+    </style>
 </resources>

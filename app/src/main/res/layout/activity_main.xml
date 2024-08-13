@@ -19,7 +19,7 @@
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                android:background="?attr/colorPrimary"
+                android:background="@color/beach_blue_dark"
                 app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
 
                 <!-- カスタムレイアウトをインフレート -->
@@ -41,31 +41,40 @@
                 android:layout_height="wrap_content"
                 android:padding="16dp">
 
-                <!-- 画像を表示するImageView -->
-                <ImageView
-                    android:id="@+id/imageView"
+                <!-- CardView で画像を包み、角を丸める -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardView"
                     android:layout_width="match_parent"
                     android:layout_height="200dp"
                     android:layout_alignParentTop="true"
                     android:layout_marginTop="20dp"
-                    android:background="@android:color/darker_gray"
-                    android:scaleType="centerCrop" />
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="8dp">
+
+                    <ImageView
+                        android:id="@+id/imageView"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop" />
+                </com.google.android.material.card.MaterialCardView>
 
                 <!-- 解析結果を表示するテキストビュー -->
                 <TextView
                     android:id="@+id/resultTextView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_below="@id/imageView"
+                    android:layout_below="@id/cardView"
                     android:layout_marginTop="20dp"
-                    android:background="@android:color/white"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/rounded_background"
                     android:elevation="2dp"
                     android:gravity="center"
                     android:padding="16dp"
                     android:text="結果がここに表示されます"
-                    android:textColor="#000000"
+                    android:textColor="@color/beach_text_on_surface"
                     android:textSize="16sp" />
 
+                <!-- ボタンコンテナ -->
                 <LinearLayout
                     android:id="@+id/buttonContainer"
                     android:layout_width="match_parent"
@@ -76,31 +85,44 @@
                     android:orientation="horizontal"
                     android:padding="16dp">
 
-                    <!-- 画像をアップロードするボタン -->
+                    <!-- 画像をアップロードする MaterialButton -->
                     <Button
                         android:id="@+id/uploadButton"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="アップロード" />
+                        android:icon="@drawable/baseline_insert_photo_24"
+                        android:text="アップロード"
+                        android:textColor="@color/beach_text_on_surface"
+                        app:iconPadding="8dp" />
 
-                    <!-- カメラを起動するボタン -->
+                    <!-- カメラを起動する MaterialButton -->
                     <Button
                         android:id="@+id/cameraButton"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
                         android:layout_weight="1"
+                        android:icon="@drawable/baseline_camera_alt_24"
                         android:text="カメラ起動"
-                        android:layout_marginStart="16dp" />
+                        android:textColor="@color/beach_text_on_surface"
+                        app:iconPadding="8dp" />
 
-                    <!-- 結果を削除するボタン -->
+                    <!-- 結果を削除する MaterialButton -->
                     <Button
                         android:id="@+id/deleteButton"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
                         android:layout_weight="1"
+                        android:icon="@drawable/baseline_delete_outline_24"
                         android:text="削除"
-                        android:visibility="gone" /> <!-- 初期状態では非表示に設定 -->
+                        android:textColor="@color/beach_text_on_primary"
+                        android:visibility="gone"
+                        app:iconPadding="8dp" /> <!-- 初期状態では非表示に設定 -->
 
                 </LinearLayout>
 
@@ -116,7 +138,7 @@
         android:layout_width="280dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="@android:color/darker_gray"
+        android:background="?attr/colorSurface"
         android:padding="8dp" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

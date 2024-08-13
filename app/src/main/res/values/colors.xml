@@ -1,5 +1,18 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- Primary colors -->
+    <color name="beach_blue_primary">#0277BD</color> <!-- A sea blue color -->
+    <color name="beach_blue_dark">#004C8C</color>
+
+    <!-- Secondary colors -->
+    <color name="beach_sand">#FFCC80</color> <!-- A sand-like color -->
+    <color name="beach_sand_dark">#FFA726</color>
+
+    <!-- Background and surface colors -->
+    <color name="beach_background">#FFFFFF</color> <!-- White background -->
+    <color name="beach_surface">#F0F0F0</color> <!-- Light gray for surfaces -->
+
+    <!-- Text colors -->
+    <color name="beach_text_on_primary">#FFFFFF</color> <!-- White text on blue -->
+    <color name="beach_text_on_secondary">#3E2723</color> <!-- Dark brown text on sand -->
+    <color name="beach_text_on_surface">#000000</color> <!-- Black text on light background -->
 </resources>
