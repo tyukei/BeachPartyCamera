@@ -9,6 +9,9 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Base64
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -42,6 +45,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var imageView: ImageView
     private lateinit var resultTextView: TextView
+    private lateinit var deleteButton: Button
     private val results = mutableListOf<ImageResult>()
     private lateinit var sidebarAdapter: SidebarAdapter
 
@@ -55,12 +59,11 @@ class MainActivity : AppCompatActivity() {
         drawerLayout = findViewById(R.id.drawerLayout)
         imageView = findViewById(R.id.imageView)
         resultTextView = findViewById(R.id.resultTextView)
+        deleteButton = findViewById(R.id.deleteButton)
         apiKey = BuildConfig.OPENAI_API_KEY
 
         // サイドバーのセットアップ
-        sidebarAdapter = SidebarAdapter(results) { position ->
-            restoreImageResult(position)
-        }
+        sidebarAdapter = SidebarAdapter(results, ::restoreImageResult, ::deleteResult)
         val sidebarRecyclerView: RecyclerView = findViewById(R.id.sidebarRecyclerView)
         sidebarRecyclerView.layoutManager = LinearLayoutManager(this)
         sidebarRecyclerView.adapter = sidebarAdapter
@@ -75,6 +78,9 @@ class MainActivity : AppCompatActivity() {
         val uploadButton: Button = findViewById(R.id.uploadButton)
         val cameraButton: Button = findViewById(R.id.cameraButton)
 
+        // 初期状態では削除ボタンを非表示に
+        deleteButton.visibility = View.GONE
+
         // サイドバーボタン
         openSidebarButton.setOnClickListener {
             drawerLayout.openDrawer(GravityCompat.START)
@@ -83,6 +89,9 @@ class MainActivity : AppCompatActivity() {
         // 新しいページ作成ボタン
         newPageButton.setOnClickListener {
             clearCurrentImageAndText()
+            deleteButton.visibility = View.GONE
+            uploadButton.visibility = View.VISIBLE
+            cameraButton.visibility = View.VISIBLE
         }
 
         // 画像アップロードボタン
@@ -92,10 +101,29 @@ class MainActivity : AppCompatActivity() {
 
         // カメラ起動ボタン
         cameraButton.setOnClickListener {
-            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(arrayOf(android.Manifest.permission.CAMERA), REQUEST_CODE_CAPTURE_IMAGE)
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.CAMERA
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.CAMERA),
+                    REQUEST_CODE_CAPTURE_IMAGE
+                )
             } else {
                 openCamera()
+            }
+        }
+
+        // 削除ボタン
+        deleteButton.setOnClickListener {
+            val currentPosition = results.indexOfFirst { it.text == resultTextView.text.toString() }
+            if (currentPosition != -1) {
+                deleteResult(currentPosition)
+                clearCurrentImageAndText()
+                deleteButton.visibility = View.GONE
+                uploadButton.visibility = View.VISIBLE
+                cameraButton.visibility = View.VISIBLE
             }
         }
     }
@@ -121,6 +149,7 @@ class MainActivity : AppCompatActivity() {
                         handleImageUpload(it)
                     }
                 }
+
                 REQUEST_CODE_CAPTURE_IMAGE -> {
                     val photo: Bitmap = data?.extras?.get("data") as Bitmap
                     imageView.setImageBitmap(photo)
@@ -159,6 +188,16 @@ class MainActivity : AppCompatActivity() {
         imageView.setImageBitmap(imageResult.image)
         resultTextView.text = imageResult.text
         drawerLayout.closeDrawer(GravityCompat.START)
+
+        // camera, upload ボタンを非表示にし、削除ボタンを表示
+        findViewById<Button>(R.id.uploadButton).visibility = View.GONE
+        findViewById<Button>(R.id.cameraButton).visibility = View.GONE
+        deleteButton.visibility = View.VISIBLE
+    }
+
+    private fun deleteResult(position: Int) {
+        results.removeAt(position)
+        sidebarAdapter.notifyDataSetChanged()
     }
 
     private fun sendImageToOpenAI(base64: String) {
@@ -172,7 +211,7 @@ class MainActivity : AppCompatActivity() {
                     messageContent = ListContent(
                         listOf(
                             TextPart(
-                                text = "画像にあるテキストをまとめて、得られる知見、事実を簡潔に説明してください。"
+                                text = "画像に点数をつけてください。その後理由を一言(30文字以内)。例:90\n服とズボンが合っている。\nA:"
                             ),
                             ImagePart(
                                 imageUrl = ImagePart.ImageURL(url = "data:image/jpeg;base64,$base64")
@@ -195,6 +234,11 @@ class MainActivity : AppCompatActivity() {
                     }
                     // 結果を表示
                     resultTextView.text = content ?: "結果がありません"
+
+                    // camera, upload ボタンを非表示にし、削除ボタンを表示
+                    findViewById<Button>(R.id.uploadButton).visibility = View.GONE
+                    findViewById<Button>(R.id.cameraButton).visibility = View.GONE
+                    deleteButton.visibility = View.VISIBLE
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {

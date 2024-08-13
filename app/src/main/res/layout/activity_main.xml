@@ -66,7 +66,6 @@
                     android:textColor="#000000"
                     android:textSize="16sp" />
 
-                <!-- 下部のボタンを配置するLinearLayout -->
                 <LinearLayout
                     android:id="@+id/buttonContainer"
                     android:layout_width="match_parent"
@@ -93,6 +92,16 @@
                         android:layout_weight="1"
                         android:text="カメラ起動"
                         android:layout_marginStart="16dp" />
+
+                    <!-- 結果を削除するボタン -->
+                    <Button
+                        android:id="@+id/deleteButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="削除"
+                        android:visibility="gone" /> <!-- 初期状態では非表示に設定 -->
+
                 </LinearLayout>
 
             </RelativeLayout>
