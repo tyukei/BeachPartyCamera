@@ -1,5 +1,6 @@
 package com.tyukei.beachpartycamera
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -24,6 +25,7 @@ class SidebarAdapter(
         return SidebarViewHolder(view)
     }
 
+    @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: SidebarViewHolder, position: Int) {
         val result = results[position]
         holder.resultTextView.text = result.text.take(5) + "..."

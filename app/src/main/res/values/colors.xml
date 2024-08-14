@@ -12,7 +12,7 @@
     <color name="beach_surface">#F0F0F0</color> <!-- Light gray for surfaces -->
 
     <!-- Text colors -->
-    <color name="beach_text_on_primary">#FFFFFF</color> <!-- White text on blue -->
+    <color name="beach_text_on_primary">#000000</color> <!-- White text on blue -->
     <color name="beach_text_on_secondary">#3E2723</color> <!-- Dark brown text on sand -->
     <color name="beach_text_on_surface">#000000</color> <!-- Black text on light background -->
 </resources>
